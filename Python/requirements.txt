@@ -1,0 +1,6 @@
+# xyzTableServer dependencies
+# Install with: pip install -r requirements.txt
+
+pyserial          # For serial communication with Arduino
+colorama          # For colored console output
+python-dotenv     # To load environment variables from .env file
