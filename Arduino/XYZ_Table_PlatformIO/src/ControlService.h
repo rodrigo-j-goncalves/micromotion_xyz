@@ -5,7 +5,7 @@
  * ===============================================================
  *  Description:
  *  - Receives CLI commands via serial to control stepper motors.
- *  - FSM handles step motion, and continuous motion.
+ *  - A finite state machine (FSM) handles step and continuous motion.
  *
  *  Created on: 24/04/2025
  *  Author: Ignacio Martínez Navajas
@@ -13,37 +13,38 @@
  * ===============================================================
  */
 
- #ifndef CONTROLSERVICE_H_
- #define CONTROLSERVICE_H_
- 
- #include <Arduino.h>
- #include "StepperMotors.h"
- 
- class ControlService {
- public:
-	 ControlService();
-	 void Begin();
-	 void Loop();
- 
-	 // CLI command handlers
-	 static void RunCallback(int arg_cnt, char **args);
-	 static void StopCallback(int arg_cnt, char **args);
-	 static void MoveCallback(int arg_cnt, char **args);	 
- 
- private:
-	 enum class FSMState {
-		 IDLE,
-		 MOVING_CONTINUOUS,
-		 MOVING_STEPS
-	 };
- 
-	 static StepperMotors motors;
-	 static FSMState aState;
- 
-	 static void enableMotors();
-	 static void disableMotors();
-	 static bool limitTriggered();
- };
- 
- #endif /* CONTROLSERVICE_H_ */
- 
+#ifndef CONTROLSERVICE_H_
+#define CONTROLSERVICE_H_
+
+#include <Arduino.h>
+#include "StepperMotors.h"
+
+// Service that interprets CLI commands to control motors using a finite state machine
+class ControlService {
+public:
+	ControlService();
+	void Begin();   // Initializes the service
+	void Loop();    // FSM loop to handle states
+
+	// CLI command handlers
+	static void RunCallback(int arg_cnt, char **args);   // Handles 'run' command
+	static void StopCallback(int arg_cnt, char **args);  // Handles 'stop' command
+	static void MoveCallback(int arg_cnt, char **args);  // Handles 'move' command
+
+private:
+	// Possible FSM states
+	enum class FSMState {
+		IDLE,
+		MOVING_CONTINUOUS,
+		MOVING_STEPS
+	};
+
+	static StepperMotors motors;  // Stepper motor controller
+	static FSMState aState;       // Current FSM state
+
+	static void enableMotors();   // Enable all motors
+	static void disableMotors();  // Disable all motors
+	static bool limitTriggered(); // Check if any limit switch was triggered
+};
+
+#endif /* CONTROLSERVICE_H_ */

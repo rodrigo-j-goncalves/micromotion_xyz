@@ -1,13 +1,19 @@
- /*
- * Scheduler.cpp
+ /**
+ * ===============================================================
+ *  Scheduler.cpp
+ *  XYZ Camera Positioning System - Main Task Scheduler Module
+ * ===============================================================
+ *  Description:
+ *  - Implements initialization and main loop coordination for the system.
+ *  - Handles startup sequence, LED feedback, CLI interaction, and motor control.
  *
  *  Created on: 03/04/2020
- *      Author: Ignacio Martínez Navajas
- *      E-mail: imnavajas@coit.es
+ *  Author: Ignacio Martínez Navajas
+ *  E-mail: imnavajas@coit.es
+ * ===============================================================
  */
 
-/*Includes*/
-#include "Scheduler.h"       /* include the declaration for this class */
+ #include "Scheduler.h"       /* include the declaration for this class */
 
 Scheduler::Scheduler() {
 

@@ -1,7 +1,7 @@
 # xyzTableServer
 
-**xyzTableServer** is a TCP/IP-to-Serial bridge designed for Arduino Mega.  
-It runs continuously, bridging a single TCP client connection to a serial-connected Arduino.
+**xyzTableServer** is a TCP/IP-to-Serial bridge designed to interface with an Arduino Mega.  
+It continuously bridges a single TCP client connection to a serial-connected Arduino running a CLI-based firmware.
 
 ---
 
@@ -9,11 +9,11 @@ It runs continuously, bridging a single TCP client connection to a serial-connec
 
 - Transparent TCP ↔ Serial communication  
 - Continuous loop serving one client at a time  
-- Custom defaults via `.env` or command-line  
-- Colorful console output with `colorama`  
-- Daily rotating logs in `/logs`  
-- Auto-listing of available serial ports on error  
-- Cross-platform: Windows, Linux, macOS
+- Customizable defaults via `.env` or command-line arguments  
+- Colorized console output with `colorama`  
+- Daily rotating logs stored in `/logs`  
+- Auto-detection of available serial ports on failure  
+- Cross-platform support: Windows, Linux, macOS
 
 ---
 
@@ -21,31 +21,38 @@ It runs continuously, bridging a single TCP client connection to a serial-connec
 
 ```
 project_root/
-├── client/                 # Placeholder for future client code
+├── client/                 # Python client script to send commands
+│   ├── xyzTableClient.py
+│   └── README.md
 ├── server/
-│   └── xyzTableServer.py   # Main TCP ↔ Serial bridge script
-├── .env                    # Default configuration
-├── install_deps.py         # Auto-installs required packages
-├── requirements.txt        # List of dependencies
-├── setup_venv.sh           # Linux/macOS venv setup script
-├── setup_venv.bat          # Windows venv setup script
-├── logs/                   # Daily-rotated log files
-└── README.md               # Project documentation (this file)
+│   ├── xyzTableServer.py   # Main TCP ↔ Serial bridge script
+│   ├── logs/
+│   │   └── xyzTableServer.log
+│   └── README.md
+├── .env                    # Optional environment config (global fallback)
+├── install_deps.py         # Installs required packages
+├── requirements.txt        # List of Python dependencies
+├── setup_venv.sh           # Unix/macOS virtual environment setup
+├── setup_venv.bat          # Windows virtual environment setup
+└── README.md               # This file
 ```
 
 ---
 
 ## 🧱 Requirements
 
-- Python 3.6+  
-- Internet connection to install packages  
+- Python **3.6+**
+- Internet connection (to install dependencies)
 
-Dependencies listed in `requirements.txt`:
+### 📦 Dependencies
+
+Listed in `requirements.txt`:
 - `pyserial`
 - `colorama`
 - `python-dotenv`
 
 Install manually:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -54,50 +61,59 @@ pip install -r requirements.txt
 
 ## ⚙️ Setup
 
-To isolate dependencies, use a **virtual environment**.
+It is recommended to use a **virtual environment** to isolate dependencies.
 
-### 🟢 Automatic setup
+### ✅ Automatic Setup
 
-**Windows**  
-Run the `setup_venv.bat` script in the project root. It will:
+#### On Windows:
+```bash
+setup_venv.bat
+```
+
+#### On Linux/macOS:
+```bash
+bash setup_venv.sh
+```
+
+These scripts will:
 1. Create a `venv` folder
 2. Activate it
 3. Install dependencies
 
-**Linux/macOS**  
-Run:
-```bash
-bash setup_venv.sh
-```
-The script will do the same steps and show how to activate the environment.
-
 ---
 
-### 🛠️ Manual setup
+### 🔧 Manual Setup
 
 ```bash
 python -m venv venv
-# Activate:
-# Windows: venv\Scripts\activate
-# Linux/macOS: source venv/bin/activate
+
+# Activate the virtual environment:
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
 ---
 
-## 🔧 Installing dependencies
+## 📥 Installing Dependencies (Alternative)
 
-Alternatively, use:
+You may also run the bundled installer script:
+
 ```bash
 python install_deps.py
 ```
-This checks for missing packages and installs them automatically.
+
+This checks and installs any missing packages automatically.
 
 ---
 
-## 🔧 Configuration
+## 🛠️ Configuration
 
-Edit the `.env` file to override defaults:
+You can define default settings in a `.env` file at the project root, or inside `/server` and `/client` separately:
 
 ```ini
 SERIAL_PORT=COM8
@@ -106,33 +122,57 @@ HOST=0.0.0.0
 PORT=5000
 ```
 
+Values from CLI arguments override `.env` settings.
+
 ---
 
 ## ▶️ Running the Server
 
-Activate your environment, then:
+Activate your environment and run:
 
 ```bash
 python server/xyzTableServer.py
 ```
 
-You can also pass arguments to override `.env`:
+Override defaults via CLI:
 
 ```bash
 python server/xyzTableServer.py --serial-port COM3 --baudrate 115200 --host 127.0.0.1 --port 9000
 ```
 
-The server will log events and data exchanges, rotate logs daily, and continue serving new clients as they connect.
+---
+
+## ▶️ Running the Client
+
+In a separate terminal:
+
+```bash
+python client/xyzTableClient.py
+```
+
+Type commands like:
+
+- `move all 10`
+- `run x`
+- `stop all`
+- `version`
 
 ---
 
 ## 🪵 Logging
 
-All logs are saved in `logs/xyzTableServer.log` with daily rotation.  
-Logs capture INFO, DEBUG (data flows), and ERROR messages.
+Logs are saved in `server/logs/xyzTableServer.log` with daily rotation.  
+Log levels include INFO, DEBUG (data), and ERROR.
 
 ---
 
-## 📎 License
+## 👨‍💻 Author
 
-This project is released under the **MIT License** — free for personal and commercial use.
+**Ignacio Martínez Navajas**  
+📧 imnavajas@coit.es
+
+---
+
+## 📄 License
+
+This project is for educational and research purposes. Please credit the original author if reused.

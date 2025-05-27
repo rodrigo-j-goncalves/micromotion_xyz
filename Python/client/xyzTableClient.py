@@ -1,213 +1,341 @@
-
 #!/usr/bin/env python3
 """
-xyzTableClient.py
+Cross-platform CLI for XYZ-Table controller (TCP→Serial bridge).
 
-Interactive CLI with argparse-style command dispatch.
-Keeps the TCP connection open and supports structured commands.
+• asyncio command/response client (+ '^' async notifications)
+• Interactive motion mode (arrows, Shift+arrows, ESC = stop, q = quit)
+  – Windows  : usa msvcrt (no requiere privilegios)
+  – Linux/mac: usa termios/tty raw mode
+Requisitos:
+    pip install colorama python-dotenv
 """
 
-import socket
-import os
-import sys
-import argparse
+from __future__ import annotations
+import asyncio, os, sys, json, time, platform, signal, threading, select
+from typing import Awaitable, Callable, Dict, List, Optional
+from colorama import Fore, init
 from dotenv import load_dotenv
-from colorama import init, Fore, Style
 
+# ─────────── Config ────────────────────────────────────────────────
+load_dotenv();
 init(autoreset=True)
-load_dotenv()
-
-DEFAULT_HOST = os.getenv("HOST", "127.0.0.1")
-DEFAULT_PORT = int(os.getenv("PORT", "5000"))
-VALID_AXES = {"X", "Y", "Z", "ALL"}
-
-def send(sock, message):
-    try:
-        sock.sendall((message + "\r").encode())  # usa \\r como el servidor espera
-        raw = sock.recv(4096)
-        response = raw.decode("utf-8", errors="ignore").strip(" \r\n>")
-        if response:
-            print(response)
-    except Exception as e:
-        print(Fore.RED + f"Send failed: {e}")
-
-def print_help(command=None):
-    parser = argparse.ArgumentParser(prog="xyz", description="XYZ Table CLI", add_help=True)
-    subparsers = parser.add_subparsers(dest="command")
-
-    move = subparsers.add_parser("move", help="Move axis")
-    move.add_argument("axis", choices=VALID_AXES - {"ALL"})
-    move.add_argument("steps", type=int)
-
-    run = subparsers.add_parser("run", help="Start continuous motion")
-    run.add_argument("axis", nargs="?", choices=VALID_AXES)
-
-    axe = subparsers.add_parser("axe", help="Set axis parameter")
-    axe.add_argument("axis", choices=VALID_AXES - {"ALL"})
-    axe.add_argument("param")
-    axe.add_argument("value")
-
-    for cmd in ["stop", "version", "reboot", "ram", "exit", "help", "interactive"]:
-        subparsers.add_parser(cmd)
-
-    raw = subparsers.add_parser("raw", help="Send raw command")
-    raw.add_argument("text", nargs=argparse.REMAINDER)
-
-    if command:
-        try:
-            parser.parse_args([command, "--help"])
-        except SystemExit:
-            pass
-    else:
-        parser.print_help()
+HOST = os.getenv("HOST", "127.0.0.1")
+PORT = int(os.getenv("PORT", "5000"))
+ETX = b"\x03"
+VALID_AXES = {"x", "y", "z", "all"}
 
 
-def handle_command(sock, line):
-    # Special case: "help <command>" -> "<command> --help"
-    if line.startswith("help "):
-        parts = line.split(maxsplit=1)
-        line = f"{parts[1]} --help"
+# ─────────── TCP client ────────────────────────────────────────────
+class XYZClient:
+    """TCP client with command/response and '^' async events."""
 
-    parser = argparse.ArgumentParser(prog="xyz", description="XYZ Table CLI", add_help=False)
-    subparsers = parser.add_subparsers(dest="command")
+    def __init__(self, host: str = HOST, port: int = PORT) -> None:
+        self._host, self._port = host, port
+        self._reader: Optional[asyncio.StreamReader] = None
+        self._writer: Optional[asyncio.StreamWriter] = None
+        self._pending: Optional[asyncio.Future[str]] = None
+        self._listeners: List[Callable[[str], Awaitable[None]]] = []
 
-    # Subcommands
-    move = subparsers.add_parser("move")
-    move.add_argument("axis", choices=VALID_AXES - {"ALL"})
-    move.add_argument("steps", type=int)
+    async def connect(self) -> None:
+        if self._reader: return
+        self._reader, self._writer = await asyncio.open_connection(self._host, self._port)
+        print(Fore.CYAN + f"[xyz] connected to {self._host}:{self._port}")
+        asyncio.create_task(self._read_loop())
 
-    run = subparsers.add_parser("run")
-    run.add_argument("axis", nargs="?", choices=VALID_AXES)
-
-    axe = subparsers.add_parser("axe")
-    axe.add_argument("axis", choices=VALID_AXES - {"ALL"})
-    axe.add_argument("param")
-    axe.add_argument("value")
-
-    for cmd in ["stop", "version", "reboot", "ram", "exit", "help", "interactive"]:
-        subparsers.add_parser(cmd)
-
-    raw = subparsers.add_parser("raw")
-    raw.add_argument("text", nargs=argparse.REMAINDER)
-
-    try:
-        args = parser.parse_args(line.split())
-    except SystemExit:
-        return
-
-    # Command dispatch
-    if args.command == "move":
-        send(sock, f"move {args.axis} {args.steps}")
-    elif args.command == "run":
-        if args.axis:
-            send(sock, f"run {args.axis}")
-        else:
-            send(sock, "run")
-    elif args.command == "axe":
-        send(sock, f"axe {args.axis} {args.param} {args.value}")
-    elif args.command == "stop":
-        send(sock, "stop")
-    elif args.command == "version":
-        send(sock, "version")
-    elif args.command == "reboot":
-        send(sock, "reboot")
-    elif args.command == "ram":
-        send(sock, "ram")
-    elif args.command == "raw":
-        send(sock, " ".join(args.text))
-    elif args.command == "help":
-        print_help()
-    elif args.command == "interactive":
-        interactive_motion(sock)
-    elif args.command == "exit":
-        print(Fore.CYAN + "Closing connection.")
-        sys.exit(0)
-
-
-def interactive_motion(sock):
-    print(Fore.CYAN + "\nEntering interactive motion mode. Use arrow keys to move axes.")
-    print(Fore.CYAN + "  ↑  → Z+	↓  → Z-")
-    print(Fore.CYAN + "  ←  → X-	→  → X+")
-    print(Fore.CYAN + "  SHIFT + arrows → Y axis")
-    print(Fore.YELLOW + "Press 'q' to quit interactive mode.\n")
-
-    try:
-        import keyboard  # pip install keyboard
-    except ImportError:
-        print(Fore.RED + "keyboard module not installed. Please install it with `pip install keyboard`.")
-        return
-
-    # Map keys to axis and direction
-    key_map = {
-        "up": ("Z", "run"),
-        "down": ("Z", "run"),
-        "left": ("X", "run"),
-        "right": ("X", "run"),
-        "shift+up": ("Y", "run"),
-        "shift+down": ("Y", "run"),
-        "shift+left": ("Y", "run"),
-        "shift+right": ("Y", "run"),
-    }
-
-    # Determine direction (sign not used here, just example mapping)
-    active_keys = {}
-
-    def on_press(e):
-        key = e.name
-        if e.event_type == "down":
-            if key == "q":
-                print(Fore.CYAN + "\nExiting interactive motion mode.")
-                keyboard.unhook_all()
-                return False
-            for k, (axis, cmd) in key_map.items():
-                if keyboard.is_pressed(k) and k not in active_keys:
-                    send(sock, f"run {axis}")
-                    active_keys[k] = axis
-
-    def on_release(e):
-        key = e.name
-        to_remove = []
-        for k in active_keys:
-            if not keyboard.is_pressed(k):
-                axis = active_keys[k]
-                send(sock, f"stop {axis}")
-                to_remove.append(k)
-        for k in to_remove:
-            del active_keys[k]
-
-    print(Fore.GREEN + "Ready. Use keys...")
-
-    keyboard.hook(on_press)
-    keyboard.hook(on_release)
-
-    # Keep the loop alive
-    try:
+    async def _read_loop(self) -> None:
+        buf = b""
         while True:
-            keyboard.wait("q")
-            break
-    except KeyboardInterrupt:
-        pass
-    finally:
-        for k, axis in active_keys.items():
-            send(sock, f"stop {axis}")
-        print(Fore.CYAN + "Stopped all motion.")
+            chunk = await self._reader.read(1024)
+            if not chunk:
+                print(Fore.RED + "[xyz] peer closed");
+                break
+            buf += chunk
+            while ETX in buf:
+                frame, buf = buf.split(ETX, 1)
+                line = frame.decode(errors="ignore").strip()
+                if line.startswith("^"):
+                    for cb in self._listeners: asyncio.create_task(cb(line[1:]))
+                elif self._pending and not self._pending.done():
+                    self._pending.set_result(line)
+                else:
+                    print(Fore.YELLOW + f"[xyz] unsolicited: {line}")
+
+    async def send(self, cmd: str, *, timeout: float = 5.0) -> str:
+        await self.connect()
+        if self._pending and not self._pending.done():
+            raise RuntimeError("command pending")
+        loop = asyncio.get_running_loop()
+        self._pending = loop.create_future()
+        self._writer.write(f"{cmd}\r".encode());
+        await self._writer.drain()
+        return await asyncio.wait_for(self._pending, timeout)
+
+    def add_async_listener(self, cb):
+        self._listeners.append(cb)
+
+    async def aclose(self):
+        if self._writer: self._writer.close(); await self._writer.wait_closed()
 
 
-def main():
-    try:
-        with socket.create_connection((DEFAULT_HOST, DEFAULT_PORT), timeout=5) as sock:
-            print(Fore.CYAN + Style.BRIGHT + f"Connected to {DEFAULT_HOST}:{DEFAULT_PORT}")
-            while True:
-                try:
-                    line = input(Fore.YELLOW + "xyz> ").strip()
-                    if not line:
-                        continue
-                    handle_command(sock, line)
-                except (KeyboardInterrupt, EOFError):
-                    print(Fore.CYAN + "\nExiting.")
+# ─────────── Interactive motion (raw keyboard) ─────────────────────
+def interactive_motion(client: XYZClient, loop: asyncio.AbstractEventLoop) -> None:
+    import string
+    active: Dict[str, str] = {}
+    stop_evt = threading.Event()
+    keymap = load_keymap()
+    axis_speed_state = {"x": "default", "y": "default", "z": "default"}
+
+    async def _send(cmd: str):
+        try:
+            await client.send(cmd, timeout=0.3)
+        except Exception:
+            pass
+
+    def axis_for(key: str, ctrl: bool) -> Optional[tuple[str, str]]:
+        k = f"CTRL_{key}" if ctrl and key in ("UP", "DOWN") else key
+        return keymap.get(k)
+
+    def start(axis: str, sign: str, tok: str):
+        if tok in active:
+            return
+        active[tok] = axis
+        asyncio.run_coroutine_threadsafe(_send(f"run {sign}{axis}"), loop)
+        loop.call_soon_threadsafe(print, f"{axis.upper()} {'+' if sign == '' else '-'} start")
+
+    def stop(tok: str):
+        axis = active.pop(tok, None)
+        if axis:
+            asyncio.run_coroutine_threadsafe(_send(f"stop {axis}"), loop)
+            loop.call_soon_threadsafe(print, f"{axis.upper()} stop")
+
+    def toggle_speed(axis: str):
+        state = axis_speed_state[axis]
+        if state == "default":
+            speed = max_speed_for(axis)
+            axis_speed_state[axis] = "max"
+        else:
+            speed = default_speed_for(axis)
+            axis_speed_state[axis] = "default"
+        if speed:
+            asyncio.run_coroutine_threadsafe(_send(f"axe {axis} maxSpeed={speed}"), loop)
+            loop.call_soon_threadsafe(print, Fore.CYAN + f"[Speed] {axis.upper()} axis → maxSpeed={speed}")
+
+    loop.call_soon_threadsafe(
+        print, Fore.CYAN +
+        "\n[interactive mode]  (customizable via .env)\n"
+        "  ←/→, ↑/↓, Ctrl+↑/↓ mapped to axes\n"
+        "  Shift + X/Y/Z = toggle speed\n"
+        "  ESC = Stop all  |  q = Quit interactive mode\n"
+    )
+
+    if os.name == "nt":  # Windows
+        import ctypes, msvcrt
+        user32 = ctypes.windll.user32
+        VK = {
+            "UP": 0x26, "DOWN": 0x28, "LEFT": 0x25, "RIGHT": 0x27,
+            "ESC": 0x1B, "Q": 0x51, "CTRL": 0x11, "SHIFT": 0x10
+        }
+
+        pressed = {k: False for k in ("UP", "DOWN", "LEFT", "RIGHT")}
+        shift_toggle_pressed = {"x": False, "y": False, "z": False}
+        esc_pressed = False
+
+        def vk_down(code: int) -> bool:
+            return bool(user32.GetAsyncKeyState(code) & 0x8000)
+
+        while not stop_evt.is_set():
+            shift = vk_down(VK["SHIFT"])
+            for axis_char in ("x", "y", "z"):
+                vk_char = ord(axis_char.upper())
+                is_down = vk_down(vk_char) and shift
+                if is_down and not shift_toggle_pressed[axis_char]:
+                    shift_toggle_pressed[axis_char] = True
+                    toggle_speed(axis_char)
+                elif not is_down:
+                    shift_toggle_pressed[axis_char] = False
+
+            if vk_down(VK["Q"]):
+                stop_evt.set()
+                break
+
+            is_esc_down = vk_down(VK["ESC"])
+            if is_esc_down and not esc_pressed:
+                esc_pressed = True
+                print(Fore.CYAN + "[ESC] Stop all motors")
+                for t in list(active): stop(t)
+                asyncio.run_coroutine_threadsafe(_send("stop"), loop)
+            elif not is_esc_down:
+                esc_pressed = False
+
+            ctrl = vk_down(VK["CTRL"])
+            for key in ("UP", "DOWN", "LEFT", "RIGHT"):
+                is_down = vk_down(VK[key])
+                token = f"C+{key}" if ctrl and key in ("UP", "DOWN") else key
+                if is_down and not pressed[key]:
+                    ax_sign = axis_for(key, ctrl)
+                    if ax_sign:
+                        axis, sign = ax_sign
+                        start(axis, sign, token)
+                elif not is_down and pressed[key]:
+                    stop(token)
+                pressed[key] = is_down
+            time.sleep(0.03)
+
+    else:  # Unix
+        import termios, tty
+        fd = sys.stdin.fileno()
+        orig_attr = termios.tcgetattr(fd)
+        tty.setraw(fd)
+        shift_toggle_pressed = {"x": False, "y": False, "z": False}
+        try:
+            while not stop_evt.is_set():
+                r, _, _ = select.select([fd], [], [], 0.05)
+                if not r:
+                    continue
+                seq = os.read(fd, 1)
+                if seq == b"q":
+                    stop_evt.set()
                     break
-    except Exception as e:
-        print(Fore.RED + f"Could not connect to server: {e}")
+                if seq in b"XYZ":
+                    axis = seq.decode().lower()
+                    if not shift_toggle_pressed[axis]:
+                        shift_toggle_pressed[axis] = True
+                        toggle_speed(axis)
+                    continue
+                for axis in shift_toggle_pressed:
+                    shift_toggle_pressed[axis] = False
+                if seq == b"\x1b":
+                    next1 = os.read(fd, 1)
+                    if next1 == b"[":
+                        next2 = os.read(fd, 1)
+                        if next2 in b"ABCD":
+                            key = {"A": "UP", "B": "DOWN", "C": "RIGHT", "D": "LEFT"}[next2.decode()]
+                            token = key
+                            ax_sign = axis_for(key, False)
+                            if ax_sign:
+                                axis, sign = ax_sign
+                                start(axis, sign, token)
+                                stop(token)
+                        elif next2 == b"1":
+                            _ = os.read(fd, 1)  # expect ;
+                            mod = os.read(fd, 1)
+                            arrow = os.read(fd, 1)
+                            if mod == b"5" and arrow in b"AB":
+                                key = {"A": "UP", "B": "DOWN"}[arrow.decode()]
+                                token = f"C+{key}"
+                                ax_sign = axis_for(key, True)
+                                if ax_sign:
+                                    axis, sign = ax_sign
+                                    start(axis, sign, token)
+                                    stop(token)
+                    else:
+                        print(Fore.CYAN + "[ESC] Stop all motors")
+                        for t in list(active): stop(t)
+                        asyncio.run_coroutine_threadsafe(_send("stop"), loop)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, orig_attr)
+
+    for t in list(active):
+        stop(t)
+    asyncio.run_coroutine_threadsafe(_send("stop"), loop)
+    loop.call_soon_threadsafe(print, Fore.CYAN + "Stopped all motion.")
+
+# ─────────── Helpers / CLI loop ─────────────────────────────────────
+def help_text():
+    print(Fore.CYAN +
+          "\nCommands:"
+          "\n  move <axis> <steps>"
+          "\n  run [axis] | stop [axis]"
+          "\n  axe <axis>           (get params)"
+          "\n  axe <axis> p=v       (set param)"
+          "\n  version | reboot | ram"
+          "\n  interactive"
+          "\n  help | exit | quit\n")
+
+async def cli(client: XYZClient):
+    await client.connect()
+    client.add_async_listener(lambda m: print(Fore.MAGENTA + f"[Async] {m}"))
+    help_text()
+    loop = asyncio.get_running_loop()
+    while True:
+        try:
+            line = await loop.run_in_executor(None, lambda: input(Fore.YELLOW + "xyz> ").strip())
+        except (EOFError, KeyboardInterrupt):
+            break
+        if not line: continue
+        cmd, *args = line.split();
+        cmd = cmd.lower()
+        if cmd in {"exit", "quit"}: break
+        if cmd == "help": help_text(); continue
+        if cmd == "interactive":
+            await loop.run_in_executor(None, interactive_motion, client, loop)
+            continue
+        try:
+            if cmd == "move" and len(args) == 2:
+                axis, steps = args
+                if axis not in VALID_AXES - {"all"}:
+                    print(Fore.RED + "axis must be x,y,z");
+                    continue
+                reply = await client.send(f"move {axis} {steps}")
+            elif cmd in {"run", "stop"}:
+                axis = args[0] if args else ""
+                reply = await client.send(f"{cmd} {axis}")
+            elif cmd in {"reboot", "version", "ram"}:
+                reply = await client.send(cmd)
+            elif cmd == "axe":
+                if len(args) == 1:
+                    reply = await client.send(f"axe {args[0]}")
+                elif len(args) == 2 and "=" in args[1]:
+                    p, v = args[1].split("=", 1)
+                    reply = await client.send(f"axe {args[0]} {p}={v}")
+                else:
+                    print(Fore.RED + "axe usage");
+                    continue
+            else:
+                print(Fore.RED + "unknown");
+                continue
+            try:
+                print(Fore.GREEN + json.dumps(json.loads(reply), indent=2))
+            except:
+                print(Fore.GREEN + reply)
+        except asyncio.TimeoutError:
+            print(Fore.RED + "timeout")
+        except Exception as e:
+            print(Fore.RED + str(e))
+
+def load_keymap() -> dict:
+    keymap = {}
+    for key in ["LEFT", "RIGHT", "UP", "DOWN", "CTRL_UP", "CTRL_DOWN"]:
+        val = os.getenv(f"KEYMAP_{key}")
+        if val:
+            axis, sign = val.split(",")
+            keymap[key] = (axis.strip(), "" if sign.strip() == "+" else "-")
+    return keymap
+
+def max_speed_for(axis: str) -> Optional[str]:
+    return os.getenv(f"MAXSPEED_{axis.upper()}")
+
+def default_speed_for(axis: str) -> Optional[str]:
+    return os.getenv(f"DEFAULTSPEED_{axis.upper()}")
+
+# ─────────── main ───────────────────────────────────────────────────
+async def _main():
+    client = XYZClient()
+    if platform.system() != "Windows":
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            try:
+                loop.add_signal_handler(sig, lambda: asyncio.create_task(client.aclose()))
+            except NotImplementedError:
+                pass
+    try:
+        await cli(client)
+    finally:
+        await client.aclose()
+
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(_main())
+    except KeyboardInterrupt:
+        pass

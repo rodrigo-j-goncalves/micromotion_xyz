@@ -1,10 +1,20 @@
+#!/usr/bin/env python3
+"""
+xyzTableServer Dependency Installer
+
+Checks for and installs all required Python packages
+used by the client and server components of the project.
+"""
+
 import subprocess
 import sys
 import importlib
 from colorama import init, Fore
 
+# Auto-reset color output after each print
 init(autoreset=True)
 
+# Required modules with their pip install names
 REQUIRED_PACKAGES = {
     "serial": "pyserial",
     "colorama": "colorama",

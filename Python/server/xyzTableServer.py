@@ -19,7 +19,7 @@ load_dotenv()
 
 # Leer valores por defecto desde .env o usar hardcoded si faltan
 DEFAULTS = {
-    'serial_port': os.getenv("SERIAL_PORT", "COM9"),
+    'serial_port': os.getenv("SERIAL_PORT", "COM7"),
     'baudrate': int(os.getenv("BAUDRATE", 115200)),
     'host': os.getenv("HOST", "0.0.0.0"),
     'port': int(os.getenv("PORT", 5000)),

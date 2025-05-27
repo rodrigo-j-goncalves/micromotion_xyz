@@ -1,12 +1,18 @@
- /*
- * Scheduler.h
+/**
+ * ===============================================================
+ *  Scheduler.h
+ *  XYZ Camera Positioning System - Main Task Scheduler Module
+ * ===============================================================
+ *  Description:
+ *  - Initializes and manages the main system services.
+ *  - Coordinates LED status, CLI interface, and motor control service.
+ *  - Provides setup (`Begin`) and continuous task execution (`Loop`) methods.
  *
  *  Created on: 03/04/2020
- *      Author: Ignacio Martínez Navajas
- *      E-mail: imnavajas@coit.es
+ *  Author: Ignacio Martínez Navajas
+ *  E-mail: imnavajas@coit.es
+ * ===============================================================
  */
-
-
 
 #ifndef SCHEDULER_H
 #define SCHEDULER_H

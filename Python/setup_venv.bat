@@ -1,13 +1,45 @@
 @echo off
-echo Setting up virtual environment...
-python -m venv venv
+setlocal
 
-echo Activating and installing dependencies...
+echo ============================================
+echo   xyzTableServer - Virtual Environment Setup
+echo ============================================
+
+REM Step 1: Create the virtual environment
+echo.
+echo Creating virtual environment in 'venv'...
+python -m venv venv
+if errorlevel 1 (
+    echo ❌ Failed to create virtual environment.
+    exit /b 1
+)
+
+REM Step 2: Activate it
+echo.
+echo Activating virtual environment...
 call venv\Scripts\activate
+if errorlevel 1 (
+    echo ❌ Failed to activate virtual environment.
+    exit /b 1
+)
+
+REM Step 3: Install dependencies
+echo.
+echo Installing required packages...
 pip install --upgrade pip
 pip install -r requirements.txt
+if errorlevel 1 (
+    echo ❌ Dependency installation failed.
+    exit /b 1
+)
 
+REM Success message
 echo.
-echo ✅ Environment ready!
-echo To activate it later, run:
+echo ✅ Environment setup complete!
+echo.
+echo To activate the environment later, run:
 echo     venv\Scripts\activate
+echo.
+
+endlocal
+

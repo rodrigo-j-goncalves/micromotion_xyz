@@ -1,0 +1,22 @@
+# Connection settings
+# HOST=10.8.0.27
+HOST=127.0.0.1
+PORT=5000
+
+# Interactive motion key mappings (customizable)
+KEYMAP_LEFT=y,-
+KEYMAP_RIGHT=y,+
+KEYMAP_UP=x,+
+KEYMAP_DOWN=x,-
+KEYMAP_CTRL_UP=z,+
+KEYMAP_CTRL_DOWN=z,-
+
+# Velocities
+MAXSPEED_X=900
+MAXSPEED_Y=600
+MAXSPEED_Z=600
+
+DEFAULTSPEED_X=800
+DEFAULTSPEED_Y=300
+DEFAULTSPEED_Z=300
+
