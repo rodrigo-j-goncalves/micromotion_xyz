@@ -1,6 +1,6 @@
-# XYZ Table — Technician Guide
+# XYZ Table — Usage Guide
 
-This guide is for anyone who needs to operate the XYZ motorized positioning table
+This guide is for anyone who wants to operate the XYZ motorized positioning table
 from their own computer. You do not need to touch the Raspberry Pi or the Arduino —
 those are already set up and running in the lab.
 
@@ -152,20 +152,21 @@ diagnosing unexpected motor activity.
 
 The Raspberry Pi (`172.25.18.77`) runs the server automatically at startup as a
 systemd service. You should not need to manage it. If you suspect the server is
-down, ask the responsible researcher to check via SSH:
+down, you can check via SSH:
 
 ```bash
-ssh xyztable@172.25.18.77          # password on request
+ssh xyztable@172.25.18.77
 sudo systemctl status xyztableserver
 sudo systemctl restart xyztableserver
 ```
 
-The Arduino firmware version can be verified by connecting to the Raspi and
-opening a serial monitor at 115200 baud, then typing `version`.
+To watch live server output:
 
----
+```bash
+sudo journalctl -u xyztableserver -f
+```
 
-## Contact
+Press `Ctrl+C` to stop, then `exit` to close the SSH session.
 
-For hardware issues or if the Raspi needs reconfiguration, contact the researcher
-responsible for the micropositioning setup.
+The Arduino firmware version can be verified by opening a serial monitor on the
+Raspi at 115200 baud and typing `version` → expect `XYZ-Table_v1.0.0`.
