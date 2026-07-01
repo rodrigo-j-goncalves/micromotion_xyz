@@ -1,0 +1,90 @@
+# micromotion_xyz configuration
+# Rename this file to 'config.toml' and edit the values for your setup.
+# After editing: restart the server and client for changes to take effect.
+# Arduino motor settings require re-uploading the firmware.
+
+[network]
+# IP address of the Raspberry Pi (running the server)
+host = "YOUR_RASPI_IP"   # e.g. "192.168.1.100"
+port = 5000
+
+[serial]
+# USB serial port where the Arduino is connected to the Raspberry Pi
+# Linux: typically /dev/ttyACM0 or /dev/ttyUSB0 — find with: ls /dev/ttyACM* /dev/ttyUSB*
+port = "/dev/ttyACM0"
+baudrate = 115200
+
+[keys]
+# Key names follow pynput conventions:
+#   Arrow keys : "up", "down", "left", "right"
+#   Letters    : single character, e.g. "a", "z"
+#   Special    : "page_up", "page_down", "f1", etc.
+up    = "up"      # X axis positive (towards camera)
+down  = "down"    # X axis negative (away from camera)
+left  = "left"    # Y axis positive (camera left)
+right = "right"   # Y axis negative (camera right)
+z_up  = "a"       # Z axis up   (camera up)
+z_down = "z"      # Z axis down (camera down)
+
+[axes]
+# Axis assignment and sign for each key
+# sign "+" = positive direction, "-" = negative direction
+up_axis    = "x"
+up_sign    = "+"
+down_axis  = "x"
+down_sign  = "-"
+left_axis  = "y"
+left_sign  = "+"
+right_axis = "y"
+right_sign = "-"
+z_up_axis  = "z"
+z_up_sign  = "-"
+z_down_axis = "z"
+z_down_sign = "+"
+
+[speeds]
+# Speed levels per axis (steps/second). Shift + X/Y/Z cycles through them.
+# First value = slow (fine focus/tracking). Last value = fast (coarse search).
+# Add more values for intermediate speeds.
+x = [200, 800]
+y = [300, 600]
+z = [300, 600]
+
+[motors]
+# Default motor settings loaded at firmware startup.
+# stepsPerUnit: steps per millimeter (depends on motor + driver microstepping + leadscrew pitch)
+# acceleration: steps/second^2
+# inverted: reverses motor direction without rewiring
+[motors.x]
+max_speed    = 800
+acceleration = 100
+steps_per_unit = 100
+inverted     = true
+
+[motors.y]
+max_speed    = 300
+acceleration = 8
+steps_per_unit = 8
+inverted     = false
+
+[motors.z]
+max_speed    = 300
+acceleration = 8
+steps_per_unit = 8
+inverted     = true
+
+[safety]
+# Retraction distance in steps when a limit switch is triggered
+retract_steps = 25
+# Debounce time for limit switch interrupts in milliseconds
+limit_debounce_ms = 5
+# Seconds of inactivity before motors are automatically disabled (0 = never)
+motor_idle_timeout_s = 0
+
+[ui]
+# Reserved for future graphical interface settings
+# color_background = "#000000"
+# color_axis_x     = "#00FF00"
+# color_axis_y     = "#00AAFF"
+# color_axis_z     = "#FF00FF"
+# font             = "monospace"

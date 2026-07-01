@@ -1,0 +1,17 @@
+# Local configuration — copy config.toml.example to config.toml and edit
+config.toml
+
+# Python virtual environment
+venv/
+
+# Logs
+Python/client/logs/
+Python/server/logs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# PlatformIO build artifacts (also covered by Arduino subfolder .gitignore)
+Arduino/XYZ_Table_PlatformIO/.pio/

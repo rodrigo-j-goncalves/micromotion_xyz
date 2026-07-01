@@ -1,0 +1,4 @@
+pyserial>=3.5
+colorama>=0.4.6
+pynput>=1.7.6
+tomli>=2.0.1; python_version < "3.11"
