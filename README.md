@@ -231,3 +231,9 @@ This is the primary tool for diagnosing unexpected overnight motor movement.
 | Server         | `SO_REUSEADDR`, sends `stop` on client disconnect                  |
 | Client         | Long-press stop bug fixed; speed-toggle debounce; full logging     |
 | Layout         | No nested same-name folders; `venv/` at repo root                  |
+
+---
+
+## Credits
+
+Original firmware and system design by **Ignacio Martínez Navajas** (imnavajas@coit.es).
