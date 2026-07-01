@@ -3,6 +3,7 @@ config.toml
 
 # Usage guide contains lab-specific info (IPs, paths)
 Usage.md
+helper.txt
 
 # Python virtual environment
 venv/
