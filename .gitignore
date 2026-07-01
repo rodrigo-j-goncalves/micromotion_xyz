@@ -1,6 +1,9 @@
 # Local configuration — copy config.toml.example to config.toml and edit
 config.toml
 
+# Usage guide contains lab-specific info (IPs, paths)
+Usage.md
+
 # Python virtual environment
 venv/
 
