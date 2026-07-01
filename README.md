@@ -14,19 +14,19 @@ Three machines work together:
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  PC (any computer on the university network)                        │
-│  xyzKeyboardController.py  ←  keyboard jogging / speed control     │
+│  xyzKeyboardController.py  ←  keyboard jogging / speed control      │
 │  browser  ←  camera live feed                                       │
 └───────────────────────────┬─────────────────────────────────────────┘
                             │  TCP  (port 5000)
 ┌───────────────────────────┴─────────────────────────────────────────┐
 │  Raspberry Pi (in the lab, always on)                               │
-│  xyzTableServer.py  ←  TCP ↔ Serial bridge                         │
+│  xyzTableServer.py  ←  TCP ↔ Serial bridge                          │
 └───────────────────────────┬─────────────────────────────────────────┘
                             │  USB serial  (115200 baud)
 ┌───────────────────────────┴─────────────────────────────────────────┐
 │  Arduino Mega 2560 (attached to the Raspi via USB)                  │
-│  XYZ_Table_PlatformIO firmware  ←  AccelStepper + limit switches   │
-│  → 3 × stepper driver (A4988/DRV8825) → motors X, Y, Z             │
+│  XYZ_Table_PlatformIO firmware  ←  AccelStepper + limit switches    │
+│  → 3 × stepper driver (A4988/DRV8825) → motors X, Y, Z              │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
