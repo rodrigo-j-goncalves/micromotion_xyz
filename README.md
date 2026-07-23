@@ -1,6 +1,6 @@
-# micromotion_xyz — v1.0.1
+# micromotion_xyz — v1.0.2
 
-A multi-platform, 3-axis motorized table controller for microscopy/videography.
+A multi-platform, 3-axis, manual/programmable motorized table controller for microscopy/videography.
 
 - Gives fine control over the position (in a 3D space) of a capture device (eg. camera) or a sample (when the camera is fixed).
 - Designed for remote operation: the user does not need to be tethered to the hardware. 
@@ -48,9 +48,9 @@ When a switch triggers, that axis stops immediately, retracts a few steps, and t
 ## Repository Layout
 
 ```
-micromotion_xyz_v1.0.1/
+micromotion_xyz_v1.0.2/
 ├── config.toml                      ← single config for the whole system
-├── VERSION                          ← "1.0.1"
+├── VERSION                          ← "1.0.2"
 ├── README.md                        ← this file
 │
 ├── Arduino/
@@ -160,14 +160,14 @@ cd Arduino/XYZ_Table_PlatformIO
 pio run --target upload
 ```
 
-Verify in a serial monitor (115200 baud): type `version`, expect `XYZ-Table_v1.0.1`.
+Verify in a serial monitor (115200 baud): type `version`, expect `XYZ-Table_v1.0.2`.
 
 ### Step 2 — Set up the Raspberry Pi (once per machine)
 
-Copy the entire `micromotion_xyz_v1.0.1/` folder to the Raspi (e.g. `~/micromotion_xyz_v1.0.1/`).
+Copy the entire `micromotion_xyz_v1.0.2/` folder to the Raspi (e.g. `~/micromotion_xyz_v1.0.2/`).
 
 ```bash
-cd ~/micromotion_xyz_v1.0.1
+cd ~/micromotion_xyz_v1.0.2
 bash Python/setup_venv.sh       # creates venv/ at repo root
 ```
 
@@ -182,14 +182,14 @@ source venv/bin/activate
 python3 Python/server/xyzTableServer.py
 ```
 
-You should see: `XYZ Table Server v1.0.1 — listening on <raspi IP>:5000`.
+You should see: `XYZ Table Server v1.0.2 — listening on <raspi IP>:5000`.
 
 ### Step 3 — Run the client on the operator's PC
 
-Copy the entire `micromotion_xyz_v1.0.1/` folder to the PC (same version as the Raspi).
+Copy the entire `micromotion_xyz_v1.0.2/` folder to the PC (same version as the Raspi).
 
 ```bash
-cd ~/micromotion_xyz_v1.0.1
+cd ~/micromotion_xyz_v1.0.2
 bash Python/setup_venv.sh       # only needed once
 source venv/bin/activate
 python3 Python/client/xyzKeyboardController.py
@@ -216,7 +216,7 @@ This is the primary tool for diagnosing unexpected overnight motor movement.
 
 ---
 
-## v1.0.1 Changes vs Original
+## v1.0.2 Changes vs Original
 
 | Component      | Change                                                              |
 |----------------|---------------------------------------------------------------------|
@@ -265,10 +265,11 @@ This work was developed within the project *Identificación de microorganismos u
 
 ## Contact
 
-Rodrigo J. Gonçalves
-Universidad de Granada
-rogo@ugr.es
+Rodrigo J. Gonçalves <br>
+[Universidad de Granada](https://www.ugr.es/) <br>
+<rogo@ugr.es> <br>
 [ORCID](https://orcid.org/0000-0002-4332-2312)
+<br>
 
 
 ---
