@@ -1,4 +1,4 @@
-# micromotion_xyz — v1.0.0
+# micromotion_xyz — v1.0.1
 
 A 3-axis motorized table controller for microscopy/videography.
 
@@ -182,7 +182,7 @@ source venv/bin/activate
 python3 Python/server/xyzTableServer.py
 ```
 
-You should see: `XYZ Table Server v1.0.0 — listening on 172.25.18.77:5000`.
+You should see: `XYZ Table Server v1.0.0 — listening on <raspi IP>:5000`.
 
 ### Step 3 — Run the client on the operator's PC
 
@@ -250,7 +250,13 @@ Hardware documentation under [CERN-OHL-P v2]; documentation under [CC BY 4.0].
 
 ## Citation
 
-If you use this system in your research, please cite it via the metadata in [`CITATION.cff`](CITATION.cff)
+If you use this system in your research, please cite the archived release:
+
+> Gonçalves, R. J. (2026). *micromotion_xyz: open-source motorized XYZ
+> positioning stage for microscale imaging* (v1.0.1). Zenodo.
+> https://doi.org/10.5281/zenodo.21508440
+
+Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
 
 ## Funding
 
