@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "micromotion_xyz: open-source motorized XYZ positioning stage for microscale imaging"
+abstract: "Firmware, control software and hardware documentation for a three-axis micrometric positioning system used in 3D video tracking of aquatic microorganisms."
+type: software
+authors:
+  - family-names: "Gonçalves"
+    given-names: "Rodrigo J."
+    affiliation: "Universidad de Granada"
+    orcid: "https://orcid.org/0000-0002-4332-2312"
+repository-code: "https://github.com/rodrigo-j-goncalves/micromotion_xyz"
+url: "https://github.com/rodrigo-j-goncalves/micromotion_xyz"
+license: MIT
+version: "1.0.1"
+date-released: "2026-07-23"
+doi: "10.5281/zenodo.21508440"
+keywords:
+  - particle tracking velocimetry
+  - plankton
+  - microscopy
+  - motion ecology
+  - open hardware
