@@ -253,9 +253,9 @@ MIT — see [`LICENSE`](LICENSE).
 
 If you use this system in your research, please cite the archived release:
 
-> Gonçalves, R. J. (2026). *micromotion_xyz: open-source motorized XYZ
-> positioning stage for microscale imaging* (v1.0.1). Zenodo.
-> https://doi.org/10.5281/zenodo.21508440
+> Gonçalves, R. J. (2026). *micromotion_xyz: open-source motorized XYZ positioning stage for microscale imaging*.
+> Zenodo.
+> https://doi.org/10.5281/zenodo.21508881
 
 Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
 
