@@ -1,6 +1,6 @@
 # micromotion_xyz — v1.0.1
 
-A 3-axis motorized table controller for microscopy/videography.
+A multi-platform, 3-axis motorized table controller for microscopy/videography.
 
 - Gives fine control over the position (in a 3D space) of a capture device (eg. camera) or a sample (when the camera is fixed).
 - Designed for remote operation: the user does not need to be tethered to the hardware. 
