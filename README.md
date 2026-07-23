@@ -1,9 +1,11 @@
 # micromotion_xyz — v1.0.0
 
-XYZ motorized table controller for microscopy videography.
-Controls three stepper motors to reposition a camera over a sample while watching
-the camera feed in a browser. Designed for remote operation: the operator is never
-watching the hardware directly.
+A 3-axis motorized table controller for microscopy/videography.
+
+- Gives fine control over the position (in a 3D space) of a capture device (eg. camera) or a sample (when the camera is fixed).
+- Designed for remote operation: the user does not need to be tethered to the hardware. 
+- Manual mode: the operator moves the motors manually, in real time. This is useful for capturing events in live samples, but it's time-consuming.
+- Automatic/programmable: an arbitrary sequence of movements and positions is pre-defined. Good for reproducibility and long-duration experiments.
 
 ---
 
@@ -39,8 +41,7 @@ Three machines work together:
 | Z    | up / down       | a / z        |
 
 Limit switches are safety-critical — the operator is never watching the hardware.
-When a switch triggers: that axis stops immediately, retracts a few steps, and the
-other axes are unaffected.
+When a switch triggers, that axis stops immediately, retracts a few steps, and the other axes are unaffected.
 
 ---
 
@@ -237,3 +238,30 @@ This is the primary tool for diagnosing unexpected overnight motor movement.
 ## Credits
 
 Original firmware and system design by **Ignacio Martínez Navajas** (imnavajas@coit.es).
+
+## Status
+
+Research instrumentation under active development. Interfaces and functionalities may change without notice. Issues and pull requests are welcome.
+
+## License
+
+[MIT] — see [`LICENSE`](LICENSE).
+Hardware documentation under [CERN-OHL-P v2]; documentation under [CC BY 4.0].
+
+## Citation
+
+If you use this system in your research, please cite it via the metadata in [`CITATION.cff`](CITATION.cff)
+
+## Funding
+
+This work was developed within the project *Identificación de microorganismos utilizando análisis de movimientos con inteligencia artificial* (CNS2023-143635), funded by MICIU/AEI/10.13039/501100011033 and by the European Union NextGenerationEU/PRTR.
+
+## Contact
+
+Rodrigo J. Gonçalves
+Universidad de Granada
+rogo@ugr.es
+[ORCID](https://orcid.org/0000-0002-4332-2312)
+
+
+---
